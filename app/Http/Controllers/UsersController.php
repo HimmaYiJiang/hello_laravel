@@ -8,8 +8,20 @@ use App\Http\Requests;
 use Mail;
 use Auth;
 
+/**
+ * Class UsersController
+ * @package App\Http\Controllers
+ */
 class UsersController extends Controller
 {
+    /**
+     * @var
+     */
+    protected $user;
+
+    /**
+     * UsersController constructor.
+     */
     public function __construct()
     {
         $this->middleware('auth', [
@@ -20,17 +32,27 @@ class UsersController extends Controller
         ]);
     }
 
+    /**
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function index()
     {
         $users = User::paginate(10);
         return view('users.index', compact('users'));
     }
 
+    /**
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function create()
     {
         return view('users.create');
     }
 
+    /**
+     * @param User $user
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function show(User $user)
     {
         $statuses = $user->statuses()
@@ -39,6 +61,10 @@ class UsersController extends Controller
         return view('users.show', compact('user', 'statuses'));
     }
 
+    /**
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Routing\Redirector
+     */
     public function store(Request $request)
     {
         $this->validate($request, [
@@ -58,6 +84,10 @@ class UsersController extends Controller
         return redirect('/');
     }
 
+    /**
+     * @param User $user
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
     public function edit(User $user)
     {
         $this->authorize('update', $user);
@@ -65,6 +95,11 @@ class UsersController extends Controller
         return view('users.edit', compact('user'));
     }
 
+    /**
+     * @param User $user
+     * @param Request $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function update(User $user, Request $request)
     {
         $this->validate($request, [
@@ -86,6 +121,10 @@ class UsersController extends Controller
         return redirect()->route('users.show', $user->id);
     }
 
+    /**
+     * @param User $user
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function destroy(User $user)
     {
         $this->authorize('destroy', $user);
@@ -94,6 +133,9 @@ class UsersController extends Controller
         return back();
     }
 
+    /**
+     * @param $user
+     */
     protected function sendEmailConfirmationTo($user)
     {
         $view = 'emails.confirm';
@@ -108,6 +150,10 @@ class UsersController extends Controller
         });
     }
 
+    /**
+     * @param $token
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function confirmEmail($token)
     {
         $user = User::where('activation_token', $token)->firstOrFail();
@@ -119,5 +165,27 @@ class UsersController extends Controller
         Auth::login($user);
         session()->flash('success', '恭喜你，激活成功！');
         return redirect()->route('users.show', [$user]);
+    }
+
+    /**
+     * @param User $user
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function followings(User $user)
+    {
+        $users = $user->followings()->PAGINATE(30);
+        $title = '关注的人';
+        return view('users.show_follow', compact('users', 'title'));
+    }
+
+    /**
+     * @param User $user
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function followers(User $user)
+    {
+        $users = $user->followers()->paginate(30);
+        $title = '粉丝';
+        return view('users.show_follow', compact('users', 'title'));
     }
 }
